@@ -141,11 +141,12 @@ async def list_my_events(message: types.Message):
         )
         await show_events(message, sorted_events, "все события")
 
-@router.message(F.text == "Семейный календарь")
-async def family_calendar_handler(message: types.Message, state: FSMContext):
-    """Обработчик кнопки 'Семейный календарь'."""
+@router.message(F.text.in_(["Мой календарь", "Семейный календарь"]))
+async def calendar_handler(message: types.Message, state: FSMContext):
+    """Обработчик кнопок 'Мой календарь' и 'Семейный календарь'."""
     await message.answer("Выберите период для просмотра:", reply_markup=get_period_keyboard())
-    await state.set_state(FamilyCalendarStates.choosing_period)
+    await state.set_state(MyCalendarStates.choosing_period if message.text == "Мой календарь" else FamilyCalendarStates.choosing_period)
+
 
 def get_event_keyboard(event_id: int) -> InlineKeyboardMarkup:
     """Создает клавиатуру для управления событием."""
@@ -193,19 +194,6 @@ async def delete_event(callback: CallbackQuery):
     db_service.delete_event(event_id)
     await callback.message.answer(f"Событие '{event.description}' удалено.")
     await callback.answer()
-
-@router.message(F.text == "Мой календарь")
-async def my_calendar_handler(message: types.Message, state: FSMContext):
-    """Обработчик кнопки 'Мой календарь'."""
-    await message.answer("Выберите период для просмотра:", reply_markup=get_period_keyboard())
-    await state.set_state(MyCalendarStates.choosing_period)
-
-@router.message(F.text == "Семейный календарь")
-async def family_calendar_handler(message: types.Message, state: FSMContext):
-    """Обработчик кнопки 'Семейный календарь'."""
-    await message.answer("Выберите период для просмотра:", reply_markup=get_period_keyboard())
-    await state.set_state(FamilyCalendarStates.choosing_period)
-    current_state = await state.get_state()
 
 @router.message(MyCalendarStates.choosing_period)
 async def my_calendar_period_handler(message: types.Message, state: FSMContext):
@@ -284,26 +272,17 @@ async def view_period(callback: CallbackQuery):
 
 
 async def show_events(message: types.Message, events: list[Event], period: str):
-    """Отображает события в удобном формате."""
+    """Отображает события отдельными сообщениями с кнопками управления."""
     if not events:
         await message.answer(f"Нет событий за {period}.")
         return
 
-    # Группируем события по датам
-    events_by_date = {}
     for event in events:
-        date_key = event.date
-        if date_key not in events_by_date:
-            events_by_date[date_key] = []
-        events_by_date[date_key].append(event)
-
-    # Формируем сообщение
-    response = f"📅 Ваши события за период: {period}:\n\n"
-    for date, day_events in events_by_date.items():
-        weekday = datetime.strptime(date, "%d.%m.%Y").strftime("%A")
-        response += f"🗓 {weekday}, {date}:\n"
-        for event in day_events:
-            response += f"  🕘 {event.time} - {event.description}\n"
-        response += "\n"
-
-    await message.answer(response)
+        keyboard = get_event_keyboard(event.id)  # Кнопки "Редактировать" и "Удалить"
+        await message.answer(
+            f"📅 <b>{event.description}</b>\n"
+            f"🗓 Дата: {event.date}\n"
+            f"⏰ Время: {event.time}",
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
