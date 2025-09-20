@@ -1,5 +1,3 @@
-![Family Planner Bot Header](https://mistralaiblackforestprod.below.corewindows.net/images/blackforest/1f2b/ed8f/-cfe/5-4222-8818-2d508475ddb7/image.jpg)
-
 # Family Planner Bot
 
 **Удобный Telegram-бот для планирования семейных событий, уведомлений и синхронизации с Google Calendar.**
@@ -125,7 +123,7 @@ python bot/main.py
 
 ## 📧 Контакты
 
-По вопросам и предложениям: [mr.paralaks@gmail.com или Telegram](@mrparalaks).
+По вопросам и предложениям: mr.paralaks@gmail.com
 
 ---
 
